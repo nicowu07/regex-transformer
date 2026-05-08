@@ -16,13 +16,45 @@ Built as a portfolio project to practice Django + React.
 
 ## Setup
 
-*(Coming soon — will add once the project is runnable.)*
+### Backend
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+Backend runs at `http://localhost:8000`.
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend runs at `http://localhost:5173`.
+
+## API Endpoints
+
+| Method | Path            | Purpose                                          |
+| ------ | --------------- | ------------------------------------------------ |
+| GET    | `/api/health/`  | Health check                                     |
+| POST   | `/api/upload/`  | Upload a CSV or Excel file; returns parsed preview |
 
 ## TODO
 
-- [ ] File upload (CSV / Excel)
+- [x] Project scaffolding (Django + React + TS)
+- [x] File upload endpoint (CSV / Excel)
+- [ ] Frontend file upload UI
 - [ ] Natural language → regex via LLM
 - [ ] Apply replacement to selected column
 - [ ] Display results in a table
-- [ ] Deploy
+- [ ] Two extra LLM transformations
+- [ ] Large file support (background processing)
+- [ ] Deployment
 - [ ] Demo video
