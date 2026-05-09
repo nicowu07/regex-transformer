@@ -1,4 +1,5 @@
 import re
+import pandas as pd
 
 REDOS_PATTERNS = [r'\(.+[+*]\)[+*]']   # (anything+)+ or (anything*)*
 
@@ -18,4 +19,13 @@ def validate_regex(pattern: str) -> bool:
         return True
     except re.error:
         return False
+
+def regex_apply(df: pd.DataFrame, regex: str, columns: list, replacement: str) -> tuple[pd.DataFrame, int]:
+    counts = 0
+    for col in columns:
+        if col in df.columns:
+            colstr = df[col].astype(str)
+            counts += colstr.str.count(regex).sum()
+            df[col] = colstr.str.replace(regex, replacement, regex=True)
+    return df, counts
     
