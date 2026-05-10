@@ -67,23 +67,26 @@ def apply_regex_view(request):
     pattern = request.data.get("pattern")
     columns = request.data.get("columns", [])
     replacement = request.data.get("replacement", "")
-    if not file_id or not pattern or not columns:
-        return Response({"error": "file_id, pattern, and columns are required"}, status=400)
+    #print(f"Received apply regex request with file_id: {file_id}, pattern: {pattern}, columns: {columns}, replacement: {replacement}")
+    # columns could be empty list
+    if not file_id or not pattern or not replacement:
+        return Response({"error": "file_id, pattern, columns, and replacement are required"}, status=400)
     elif not isinstance(columns, list):
-        return Response({"error": "Invalid columns format"}, status=400)
+        return Response({"error": "Invalid columns format"}, status=401)
     elif not validate_regex(pattern):
-        return Response({"error": "Regex invalid"}, status=400)
+        return Response({"error": "Regex invalid"}, status=402)
     elif replacement is None or not isinstance(replacement, str):
-        return Response({"error": "Invalid replacement format"}, status=400)
+        return Response({"error": "Invalid replacement format"}, status=403)
 
     try:
         df = load_dataframe(file_id)
     except ValueError as e:
-        return Response({"error": str(e)}, status=400)
+        return Response({"error": str(e)}, status=405)
     
     result_df, counts = regex_apply(df, pattern, columns, replacement)
     result_file_id = save_dataframe(result_df)
     preview = result_df.head(3).to_dict(orient='records')
+    columns = result_df.columns.tolist()
     return Response({"result_file_id": result_file_id, "counts": counts, "preview": preview, "columns": columns})
 
 @api_view(["GET"])
