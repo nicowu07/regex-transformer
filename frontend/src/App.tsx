@@ -52,6 +52,16 @@ function App() {
     }
   })
 
+  const applyMutation = useMutation<ApplyRegexResponse, Error, {file_id: string, pattern: string, columns: string[], replacement: string}>({
+    mutationFn: async (input) => {
+      const res = await axios.post(`${API_BASE}/apply-regex/`, input)
+      return res.data
+    }
+  })
+
+  const previewColumns = applyMutation.data?.columns || uploadMutation.data?.columns || []
+  const previewRows = applyMutation.data?.preview || uploadMutation.data?.preview || []
+
   return (
     <div className="min-h-screen bg-gray-70 py-8">
       <div className="max-w-3xl mx-auto px-4 space-y-6">
@@ -79,26 +89,22 @@ function App() {
         )}
 
         {/* File info and preview section */}
-        {uploadMutation.data && (
+        {previewRows.length > 0 && (
           <div>
-            <h2>File Info</h2>
-            <p><strong>Filename:</strong> {uploadMutation.data.filename}</p>
-            <p><strong>Rows:</strong> {uploadMutation.data.rows}</p>
-            <p><strong>Columns:</strong> {uploadMutation.data.columns}</p>
             <section className="bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-semibold mb-3">Preview</h2>
               <table className="w-full border-collapse text-sm">
                 <thead className="bg-gray-100 text-left">
                   <tr>
-                    {uploadMutation.data.columns.map((col) => (
+                    {previewColumns.map((col) => (
                       <th key={col}>{col}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                    {uploadMutation.data.preview.map((row, index) => (
+                    {previewRows.map((row, index) => (
                       <tr key={index}>
-                        {uploadMutation.data.columns.map((col) => (
+                        {previewColumns.map((col) => (
                           <td key={col} className="border px-4 py-2">
                             {String(row[col] ?? '')}
                           </td>
@@ -136,7 +142,7 @@ function App() {
               {generateMutation.isPending ? 'Generating...' : 'Generate Regex'}
             </button>
             {generateMutation.isError && (
-              <p className="">
+              <p className="mt-2 text-sm text-red-600">
                 Error: {generateMutation.error.message}
               </p>
             )}
@@ -165,12 +171,39 @@ function App() {
           </div>
         )}
 
-
+        {/* Apply regex and show results section */}
         {generateMutation.data && (
-          <section className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold mb-3">Download</h2>
-            <p className="text-sm text-gray-500">{/* TODO step 5 */}</p>
-          </section>
+          <div className="space-y-3">
+            <button
+              className="px-4 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => {
+                applyMutation.mutate({
+                  pattern: generateMutation.data.pattern,
+                  columns: generateMutation.data.columns,
+                  replacement: generateMutation.data.replacement,
+                  file_id: uploadMutation.data?.file_id || ''
+                })
+              }}
+              disabled={applyMutation.isPending}
+            >
+              {applyMutation.isPending ? 'Applying...' : 'Apply Regex'}
+            </button>
+          </div>
+        )}
+
+
+        {applyMutation.data && (
+          <div>
+            <p className="text-sm text-gray-600">
+              ✓ Applied regex to {applyMutation.data.counts} cells.
+            </p>
+            <a 
+              href={`${API_BASE}/download/${applyMutation.data.result_file_id}/`}
+              className="inline-block px-4 py-2 bg-indigo-600 text-white rounded text-sm font-medium hover:bg-indigo-700 no-underline"
+            >
+              Download CSV
+            </a>
+          </div>
         )}
         
       </div>
