@@ -22,6 +22,9 @@ def validate_regex(pattern: str) -> bool:
 
 def regex_apply(df: pd.DataFrame, regex: str, columns: list, replacement: str) -> tuple[pd.DataFrame, int]:
     counts = 0
+    # If no columns specified, apply to all columns
+    if not columns:
+        columns = df.columns
     for col in columns:
         if col in df.columns:
             colstr = df[col].astype(str)

@@ -11,10 +11,12 @@ def generate_regex(user_prompt: str, columns: list) -> str:
             {
                 "role": "system",
                 "content": "You are a helpful regex generator.  \
-                You will be given a user prompt describing a pattern to match and a list of column names. You will respond with a regex that matches that pattern\
-                and a list of columns from the available set that the user most likely wants this pattern applied to.\
-                Only provide the regex and a list of matched columns in your response in json format, without any additional explanation or text.\
-                response_format={'pattern': '<regex>', 'columns': ['<column1>', '<column2>', ...]}"
+                You will be given a user prompt describing a pattern to match and a list of column names. \
+                1. You will respond with a regex that matches that pattern\
+                2. Provide a list of columns from the available set that the user most likely wants this pattern applied to.\
+                3. The replacement string that user wants to use, if mentioned in the prompt. If no replacement is mentioned, return an empty string as the replacement.\
+                Only provide the regex, a list of matched columns, and the replacement string in your response in json format, without any additional explanation or text.\
+                response_format={'pattern': '<regex>', 'columns': ['<column1>', '<column2>', ...], 'replacement': '<replacement>'}"
             },
             {
                 "role": "user",
@@ -25,10 +27,10 @@ def generate_regex(user_prompt: str, columns: list) -> str:
         temperature=0.0
     )
     result = json.loads(response.choices[0].message.content)
-    if "pattern" not in result or "columns" not in result:
+    if "pattern" not in result or "columns" not in result or "replacement" not in result:
         raise ValueError("Invalid response format from LLM")
-    elif not isinstance(result["pattern"], str) or not isinstance(result["columns"], list):
+    elif not isinstance(result["pattern"], str) or not isinstance(result["columns"], list) or not isinstance(result["replacement"], str):
         raise ValueError("Invalid types in response from LLM")
     result["columns"] = [col for col in result["columns"] if col in columns]
 
-    return result["pattern"], result["columns"]
+    return result["pattern"], result["columns"], result["replacement"]

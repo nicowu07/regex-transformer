@@ -51,27 +51,27 @@ def generate_regex_view(request):
     if not user_prompt:
         return Response({"error": "Prompt is required"}, status=500)
     elif not columns or not isinstance(columns, list):
-        return Response({"error": "Invalid columns format"}, status=500)
+        return Response({"error": "Invalid columns format"}, status=501)
     else:
         try:
-            regex, matched_columns = generate_regex(user_prompt, columns)
+            pattern, matched_columns, replacement = generate_regex(user_prompt, columns)
         except Exception as e:
             return Response({"error": f"Upstream service failed with error: {str(e)}"}, status=502)
-        if not validate_regex(regex):
+        if not validate_regex(pattern):
             return Response({"error": "Regex invalid"}, status=400)
-        return Response({"regex": regex, "columns": matched_columns})
+        return Response({"pattern": pattern, "columns": matched_columns, "replacement": replacement})
 
 @api_view(["POST"])
 def apply_regex_view(request):
     file_id = request.data.get("file_id")
-    regex = request.data.get("regex")
+    pattern = request.data.get("pattern")
     columns = request.data.get("columns", [])
     replacement = request.data.get("replacement", "")
-    if not file_id or not regex or not columns:
-        return Response({"error": "file_id, regex, and columns are required"}, status=400)
+    if not file_id or not pattern or not columns:
+        return Response({"error": "file_id, pattern, and columns are required"}, status=400)
     elif not isinstance(columns, list):
         return Response({"error": "Invalid columns format"}, status=400)
-    elif not validate_regex(regex):
+    elif not validate_regex(pattern):
         return Response({"error": "Regex invalid"}, status=400)
     elif replacement is None or not isinstance(replacement, str):
         return Response({"error": "Invalid replacement format"}, status=400)
@@ -81,9 +81,10 @@ def apply_regex_view(request):
     except ValueError as e:
         return Response({"error": str(e)}, status=400)
     
-    result_df, counts = regex_apply(df, regex, columns, replacement)
+    result_df, counts = regex_apply(df, pattern, columns, replacement)
     result_file_id = save_dataframe(result_df)
-    return Response({"result_file_id": result_file_id, "counts": counts})
+    preview = result_df.head(3).to_dict(orient='records')
+    return Response({"result_file_id": result_file_id, "counts": counts, "preview": preview, "columns": columns})
 
 @api_view(["GET"])
 def download_file_view(request, file_id):
