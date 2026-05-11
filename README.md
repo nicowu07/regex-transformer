@@ -66,7 +66,7 @@ Frontend runs at `http://localhost:5173`.
 - [x] File download endpoint
 - [x] Frontend integration (full upload → describe → apply → download flow)
 - [x] Tailwind styling
-- [ ] Backend logging
+- [x] Backend logging
 - [ ] Two extra LLM transformations
 - [ ] Large file support (background processing)
 - [ ] Deployment
