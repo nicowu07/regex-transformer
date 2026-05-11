@@ -66,9 +66,6 @@ function App() {
     }
   }, [uploadMutation.data?.file_id])
 
-  const previewColumns = applyMutation.data?.columns || uploadMutation.data?.columns || []
-  const previewRows = applyMutation.data?.preview || uploadMutation.data?.preview || []
-
   return (
     <div className="min-h-screen bg-gray-100 py-8">
       <div className="max-w-3xl mx-auto px-4 space-y-6">
