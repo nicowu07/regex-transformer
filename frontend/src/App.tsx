@@ -66,6 +66,7 @@ function App() {
     }
   }, [uploadMutation.data?.file_id])
 
+
   return (
     <div className="min-h-screen bg-gray-100 py-8">
       <div className="max-w-3xl mx-auto px-4 space-y-6">
@@ -116,26 +117,28 @@ function App() {
           <div>
             <section className="bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-semibold mb-3">Original File Preview</h2>
-              <table className="w-full border-collapse text-sm">
-                <thead className="bg-gray-100 text-left border-b">
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    {uploadMutation.data.columns.map((col) => (
-                      <th key={col} className="px-4 py-1 text-left font-medium text-gray-700">{col}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                    {uploadMutation.data.preview.map((row, index) => (
-                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                        {uploadMutation.data.columns.map((col) => (
-                          <td key={col} className="px-4 py-2 text-gray-900">
-                            {String(row[col] ?? '')}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-sm">
+                  <thead className="bg-gray-100 text-left border-b">
+                    <tr className="border-b border-gray-200 bg-gray-50">
+                      {uploadMutation.data.columns.map((col) => (
+                        <th key={col} className="px-4 py-1 text-left font-medium text-gray-700">{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                      {uploadMutation.data.preview.map((row, index) => (
+                        <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                          {uploadMutation.data.columns.map((col) => (
+                            <td key={col} className="px-4 py-2 text-gray-900">
+                              {String(row[col] ?? '')}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
             </section>
           </div>
         )}
@@ -212,26 +215,28 @@ function App() {
         {applyMutation.data && (
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold mb-3">Transformed File Preview</h2>
-              <table className="w-full border-collapse text-sm">
-                <thead className="bg-gray-100 text-left border-b">
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    {applyMutation.data.columns.map((col) => (
-                      <th key={col} className="px-4 py-1 text-left font-medium text-gray-700">{col}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                    {applyMutation.data.preview.map((row, index) => (
-                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                        {applyMutation.data.columns.map((col) => (
-                          <td key={col} className="px-4 py-2 text-gray-900">
-                            {String(row[col] ?? '')}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-sm">
+                  <thead className="bg-gray-100 text-left border-b">
+                    <tr className="border-b border-gray-200 bg-gray-50">
+                      {applyMutation.data.columns.map((col) => (
+                        <th key={col} className="px-4 py-1 text-left font-medium text-gray-700">{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                      {applyMutation.data.preview.map((row, index) => (
+                        <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                          {applyMutation.data.columns.map((col) => (
+                            <td key={col} className="px-4 py-2 text-gray-900">
+                              {String(row[col] ?? '')}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
             <p className="text-sm text-gray-600 my-2">
               ✓ Applied regex to {applyMutation.data.counts} cells.
             </p>
