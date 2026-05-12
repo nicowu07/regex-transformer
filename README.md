@@ -4,15 +4,27 @@ A web app for matching and replacing patterns in CSV / Excel files using natural
 
 Built as a portfolio project to practice Django + React.
 
-## Status
+## Demo
 
-🚧 Core feature complete. Polish and deployment in progress.
+**Live app:** <https://filetransformer.duckdns.org>
+
+📹 **Demo video:** https://www.loom.com/share/49eed0dc55454a67926f2adb425e66d7
 
 ## Stack
 
-- **Backend:** Django, Django REST Framework
-- **Frontend:** React, TypeScript, Vite
+- **Backend:** Django, Django REST Framework, pandas, pyarrow
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS, TanStack Query, Axios
 - **LLM:** Groq API (`llama-3.3-70b-versatile`)
+- **Deployment:** DigitalOcean Droplet, nginx, gunicorn, Let's Encrypt
+
+## Features
+
+- Upload CSV / Excel files
+- Two LLM-powered transformations:
+  - **Replace patterns** — describe what to find and what to replace it with
+  - **Filter rows** — describe which rows to keep
+- Transformations chain (apply one, then another, on the same file)
+- Download the transformed file as CSV
 
 ## Setup
 
@@ -42,35 +54,25 @@ Frontend runs at `http://localhost:5173`.
 
 ### Environment Variables
 
-| Variable        | Purpose         |
-| --------------- | --------------- |
-| `GROQ_API_KEY`  | LLM access      |
+| Variable                 | Purpose                                    |
+| ------------------------ | ------------------------------------------ |
+| `GROQ_API_KEY`           | LLM access                                 |
+| `DJANGO_DEBUG`           | `True` for dev, `False` for prod           |
+| `DJANGO_ALLOWED_HOSTS`   | Comma-separated hostnames                  |
+| `DJANGO_CORS_ORIGINS`    | Comma-separated origins allowed to call API |
 
 ## API Endpoints
 
-| Method | Path            | Purpose                                          |
-| ------ | --------------- | ------------------------------------------------ |
-| GET    | `/api/health/`  | Health check                                     |
-| POST   | `/api/upload/`  | Upload a CSV or Excel file; returns parsed preview |
-| POST   | `/api/generate-regex/` | Convert a natural language description into a regex    |
-| POST   | `/api/apply-regex/`           | Apply a pattern to one or more columns               |
-| GET    | `/api/download/<file_id>/`    | Download the transformed file as CSV                 |
+| Method | Path                          | Purpose                                                  |
+| ------ | ----------------------------- | -------------------------------------------------------- |
+| GET    | `/api/health/`                | Health check                                             |
+| POST   | `/api/upload/`                | Upload a CSV / Excel file; returns `file_id` + preview   |
+| POST   | `/api/generate-regex/`        | LLM-generated regex + suggested columns and replacement  |
+| POST   | `/api/apply-regex/`           | Apply a regex to one or more columns                     |
+| POST   | `/api/generate-filter/`       | LLM-generated pandas query expression                    |
+| POST   | `/api/apply-filter/`          | Apply a query expression and return only matching rows   |
+| GET    | `/api/download/<file_id>/`    | Download the transformed file as CSV                     |
 
-## TODO
-
-- [x] Project scaffolding (Django + React + TS)
-- [x] File upload endpoint (CSV / Excel)
-- [x] Frontend file upload UI
-- [x] Natural language → regex via LLM
-- [x] Apply replacement to selected column
-- [x] File download endpoint
-- [x] Frontend integration (full upload → describe → apply → download flow)
-- [x] Tailwind styling
-- [x] Backend logging
-- [ ] Two extra LLM transformations
-- [ ] Large file support (background processing)
-- [ ] Deployment
-- [ ] Demo video
 
 ## Notes / Design Decisions
 
@@ -83,13 +85,15 @@ Frontend runs at `http://localhost:5173`.
 
 ## Known Limitations
 
-These are conscious deferrals, not oversights:
-
-- **No request caching.** Identical descriptions hit the LLM every time. A simple in-memory cache keyed by description would cut LLM calls and cost significantly.
-- **No rate limiting.** A user could spam the LLM endpoint and burn the API quota. Django REST Framework has built-in throttling that would be a 5-minute fix.
-- **ReDoS protection is heuristic.** The regex validator catches obvious nested-quantifier patterns but isn't bulletproof. A production version would run the regex in a sandbox with a wall-clock timeout, or use a non-backtracking engine like Google's `re2`.
-- **No authentication or per-user file isolation.** The app is single-tenant by design. Adding Django's auth + a `User` foreign key on uploaded files would be straightforward.
-- **No undo / regex history.** Users can't undo a transformation or replay a previous pattern. A small UX improvement worth ~half a day.
-- **No LLM eval harness.** When the prompt or model changes, there's no automated way to detect regressions in regex quality. A small set of test cases (description → expected behavior) would catch this.
-- **Output is always CSV** even if the original file was Excel.
-- **Replacement is const string** if user want the replacement to be difference for different cells, the function needs to be improved.
+- **Read-only LLM suggestions.** The UI shows the pattern, columns, and replacement as read-only. Users edit the prompt and regenerate to make changes. With more time I'd add inline editing of all three, since LLMs sometimes get one piece wrong out of three.
+- **No third transformation.** Designed an auto-redact PII feature (LLM classifies which columns contain PII, applies appropriate redactions) but didn't ship it for time.
+- **No large file support.** Currently each file is processed synchronously. A production version would push large files to a Celery worker with progress polling on the frontend.
+- **Mixed-type Excel columns can fail to save.** Excel files with columns containing both numbers and strings (e.g. a salary column with one stray text value) fail pyarrow's strict type checking. Documented in code; fix is one-line (`astype(str)` on object columns) but not yet applied.
+- **No automated tests.** Pytest for services and integration tests for views would be the natural next step.
+- **No rate limiting or LLM call caching.** Identical descriptions hit the LLM every time.
+- **ReDoS protection is heuristic.** Catches obvious nested quantifiers in regex but isn't bulletproof. A production version would sandbox the regex with a wall-clock timeout, or use `re2`.
+- **Project hosted under `/root/` for speed.** A production setup would put the app under `/srv/` with proper user ownership instead of chmodding `/root/` to be traversable.
+- **No file cleanup.** Uploaded and transformed files persist on disk indefinitely. Should expire after a few hours.
+- **Output is always CSV** even if the original file was Excel. Would track the original format and match on download.
+- **No authentication or per-user file isolation.** Single-tenant by design.
+- **Column names are sent to the LLM.** Cell values never leave the server. Worth knowing for sensitive schemas.

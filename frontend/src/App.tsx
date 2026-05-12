@@ -117,7 +117,7 @@ function App() {
         <header>
           <h1 className="text-3xl font-bold text-gray-900">File Transformer</h1>
           <p className="text-sm text-gray-600 mt-1">
-            Find and replace patterns in CSV files using natural language.
+            Find and replace patterns in CSV/Excel files using natural language.
           </p>
         </header>
 
