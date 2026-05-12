@@ -36,7 +36,7 @@ type ApplyFilterResponse = {
   columns: string[]
 }
 
-const API_BASE = 'http://localhost:8000/api'
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api'
 
 
 function App() {
@@ -115,7 +115,7 @@ function App() {
     <div className="min-h-screen bg-gray-100 py-8">
       <div className="max-w-3xl mx-auto px-4 space-y-6">
         <header>
-          <h1 className="text-3xl font-bold text-gray-900">Regex Transformer</h1>
+          <h1 className="text-3xl font-bold text-gray-900">File Transformer</h1>
           <p className="text-sm text-gray-600 mt-1">
             Find and replace patterns in CSV files using natural language.
           </p>
