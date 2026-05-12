@@ -2,8 +2,9 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 import pandas as pd
-from api.services.llm import generate_regex
+from api.services.llm import generate_regex, generate_filter
 from api.services.regex import validate_regex, regex_apply
+from api.services.filter import filter_apply
 from api.services.file_storage import save_dataframe, load_dataframe, valid_id
 import io
 from django.http import FileResponse, Http404
@@ -60,19 +61,37 @@ def generate_regex_view(request):
     if not user_prompt:
         logger.error("Prompt is required")
         return Response({"error": "Prompt is required"}, status=500)
-    elif not columns or not isinstance(columns, list):
+    if not columns or not isinstance(columns, list):
         logger.error("Invalid columns format")
         return Response({"error": "Invalid columns format"}, status=501)
-    else:
-        try:
-            pattern, matched_columns, replacement = generate_regex(user_prompt, columns)
-        except Exception as e:
-            logger.error(f"Error generating regex: {str(e)}")
-            return Response({"error": f"Upstream service failed with error: {str(e)}"}, status=502)
-        if not validate_regex(pattern):
-            logger.error("Generated regex is invalid")
-            return Response({"error": "Regex invalid"}, status=400)
-        return Response({"pattern": pattern, "columns": matched_columns, "replacement": replacement})
+    try:
+        pattern, matched_columns, replacement = generate_regex(user_prompt, columns)
+    except Exception as e:
+        logger.error(f"Error generating regex: {str(e)}")
+        return Response({"error": f"Upstream service failed with error: {str(e)}"}, status=502)
+    if not validate_regex(pattern):
+        logger.error("Generated regex is invalid")
+        return Response({"error": "Regex invalid"}, status=400)
+    return Response({"pattern": pattern, "columns": matched_columns, "replacement": replacement})
+
+@api_view(["POST"])
+def generate_filter_view(request):
+    user_prompt = request.data.get("prompt", "").strip()
+    file_id = request.data.get("file_id", "")
+    if not user_prompt:
+        logger.error("Prompt is required")
+        return Response({"error": "Prompt is required"}, status=500)
+    try:
+        df = load_dataframe(file_id)
+    except ValueError as e:
+        logger.exception(f"Error loading file: {str(e)}")
+        return Response({"error": str(e)}, status=400)
+    try:
+        filter_expression = generate_filter(user_prompt, df)
+    except Exception as e:
+        logger.exception(f"Error generating filter: {str(e)}")
+        return Response({"error": f"Upstream service failed with error: {str(e)}"}, status=502)
+    return Response(filter_expression)
 
 @api_view(["POST"])
 def apply_regex_view(request):
@@ -98,7 +117,7 @@ def apply_regex_view(request):
     try:
         df = load_dataframe(file_id)
     except ValueError as e:
-        logger.error(f"Error loading file: {str(e)}")
+        logger.exception(f"Error loading file: {str(e)}")
         return Response({"error": str(e)}, status=405)
     
     result_df, counts = regex_apply(df, pattern, columns, replacement)
@@ -106,6 +125,35 @@ def apply_regex_view(request):
     preview = result_df.head(3).fillna("").to_dict(orient='records')
     columns = result_df.columns.tolist()
     logger.info(f"Regex applied successfully to file: {file_id}")
+    return Response({"result_file_id": result_file_id, "counts": counts, "preview": preview, "columns": columns})
+
+@api_view(["POST"])
+def apply_filter_view(request):
+    file_id = request.data.get("file_id")
+    query = request.data.get("query")
+    
+    if not file_id or not query:
+        logger.error("file_id and query are required")
+        return Response({"error": "file_id and query are required"}, status=400)
+    elif not isinstance(query, str):
+        logger.error("Invalid query format")
+        return Response({"error": "Invalid query format"}, status=400)
+
+    try:
+        df = load_dataframe(file_id)
+    except ValueError as e:
+        logger.exception(f"Error loading file: {str(e)}")
+        return Response({"error": str(e)}, status=405)
+    try:
+        result_df = filter_apply(query, df)
+    except Exception as e:
+        logger.exception(f"Error applying filter: {str(e)}")
+        return Response({"error": f"Filter apply failed with error: {str(e)}"}, status=502)
+    result_file_id = save_dataframe(result_df)
+    preview = result_df.head(5).fillna("").to_dict(orient='records')
+    columns = result_df.columns.tolist()
+    counts = len(result_df)
+    logger.info(f"Filter applied successfully to file: {file_id}")
     return Response({"result_file_id": result_file_id, "counts": counts, "preview": preview, "columns": columns})
 
 @api_view(["GET"])
@@ -116,7 +164,7 @@ def download_file_view(request, file_id):
     try:
         df = load_dataframe(file_id)
     except ValueError as e:
-        logger.error(f"Error loading file: {str(e)}")
+        logger.exception(f"Error loading file: {str(e)}")
         return Response({"error": str(e)}, status=400)
     
     buffer = io.BytesIO()
