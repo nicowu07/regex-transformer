@@ -387,7 +387,7 @@ function App() {
                 </table>
               </div>
             <p className="text-sm text-gray-600 my-2">
-              ✓ Applied Filter to {applyFilterMutation.data.counts} cells.
+              ✓ Kept {applyFilterMutation.data.counts} rows after filtering.
             </p>
             <a 
               href={`${API_BASE}/download/${applyFilterMutation.data.result_file_id}/`}

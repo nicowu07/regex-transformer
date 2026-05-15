@@ -25,7 +25,8 @@ def generate_regex(user_prompt: str, columns: list) -> str:
                 Available columns: {columns or []}"""
             }
         ],
-        temperature=0.0
+        temperature=0.0,
+        response_format={"type": "json_object"}
     )
     result = json.loads(response.choices[0].message.content)
     if "pattern" not in result or "columns" not in result or "replacement" not in result:
@@ -61,7 +62,8 @@ def generate_filter(user_prompt: str, df: pd.DataFrame) -> str:
                 Available columns: {columns_description}"""
             }
         ],
-        temperature=0.0
+        temperature=0.0,
+        response_format={"type": "json_object"}
     )
     result = json.loads(response.choices[0].message.content)
     if "query" not in result:

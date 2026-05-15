@@ -23,7 +23,6 @@ Built as a portfolio project to practice Django + React.
 - Two LLM-powered transformations:
   - **Replace patterns** — describe what to find and what to replace it with
   - **Filter rows** — describe which rows to keep
-- Transformations chain (apply one, then another, on the same file)
 - Download the transformed file as CSV
 
 ## Setup
