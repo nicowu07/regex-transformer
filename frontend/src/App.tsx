@@ -322,6 +322,18 @@ function App() {
           </div>
         )}
 
+        {applyFilterMutation.isError && (
+          <p className="mt-2 text-sm text-red-600">
+            Error: {applyFilterMutation.error.message}
+          </p>
+        )}
+
+        {applyRegexMutation.isError && (
+          <p className="mt-2 text-sm text-red-600">
+            Error: {applyRegexMutation.error.message}
+          </p>
+        )}
+
         {/* Apply regex and show results section */}
         {applyRegexMutation.data && activeTab === 'replace' && (
           <div className="bg-white rounded-lg shadow p-6">

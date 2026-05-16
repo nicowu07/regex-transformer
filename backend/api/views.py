@@ -105,7 +105,7 @@ def apply_regex_view(request):
     replacement = request.data.get("replacement", "")
     #print(f"Received apply regex request with file_id: {file_id}, pattern: {pattern}, columns: {columns}, replacement: {replacement}")
     # columns and replacement could be empty list
-    if not file_id or not pattern or:
+    if not file_id or not pattern:
         logger.error("file_id, pattern, columns are required")
         return Response({"error": "file_id, pattern, columns, and replacement are required"}, status=400)
     elif not isinstance(columns, list):
