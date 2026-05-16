@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 import './App.css'
 import { useState, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
@@ -37,6 +37,17 @@ type ApplyFilterResponse = {
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api'
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof AxiosError) {
+    const backendError = error.response?.data?.error
+    if (typeof backendError === 'string' && backendError) {
+      return backendError
+    }
+    return error.message
+  }
+  return error instanceof Error ? error.message : 'Unknown error'
+}
 
 
 function App() {
@@ -153,7 +164,7 @@ function App() {
         </section>
 
         {uploadMutation.isError && (
-          <p>Error: {uploadMutation.error.message}</p>
+          <p>Error: {getErrorMessage(uploadMutation.error)}</p>
         )}
 
         {/* File preview section */}
@@ -250,9 +261,17 @@ function App() {
             
             {generateFilterMutation.isError && (
               <p className="mt-2 text-sm text-red-600">
-                Error: {generateFilterMutation.error.message}
+                Error: {getErrorMessage(generateFilterMutation.error)}
               </p>
             )}
+
+            {generateRegexMutation.isError && (
+              <p className="mt-2 text-sm text-red-600">
+                Error: {getErrorMessage(generateRegexMutation.error)}
+              </p>
+            )}
+
+
           </section>
         )}
 
@@ -324,13 +343,13 @@ function App() {
 
         {applyFilterMutation.isError && (
           <p className="mt-2 text-sm text-red-600">
-            Error: {applyFilterMutation.error.message}
+            Error: {getErrorMessage(applyFilterMutation.error)}
           </p>
         )}
 
         {applyRegexMutation.isError && (
           <p className="mt-2 text-sm text-red-600">
-            Error: {applyRegexMutation.error.message}
+            Error: {getErrorMessage(applyRegexMutation.error)}
           </p>
         )}
 
