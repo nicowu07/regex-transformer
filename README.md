@@ -53,12 +53,70 @@ Frontend runs at `http://localhost:5173`.
 
 ### Environment Variables
 
-| Variable                 | Purpose                                    |
-| ------------------------ | ------------------------------------------ |
-| `GROQ_API_KEY`           | LLM access                                 |
-| `DJANGO_DEBUG`           | `True` for dev, `False` for prod           |
-| `DJANGO_ALLOWED_HOSTS`   | Comma-separated hostnames                  |
-| `DJANGO_CORS_ORIGINS`    | Comma-separated origins allowed to call API |
+| Variable                 | Required | Default                              | Purpose                                              |
+| ------------------------ | -------- | ------------------------------------ | ---------------------------------------------------- |
+| `GROQ_API_KEY`           | Yes      | —                                    | Authentication for the Groq LLM API                  |
+| `STORAGE_DIR`            | Yes      | —                                    | Directory for uploaded and transformed files         |
+| `DJANGO_DEBUG`           | No       | `False`                              | `True` enables Django debug mode (dev only)          |
+| `DJANGO_ALLOWED_HOSTS`   | No       | `localhost,127.0.0.1`                | Comma-separated hostnames Django will respond to     |
+| `DJANGO_CORS_ORIGINS`    | No       | `http://localhost:5173`              | Comma-separated origins allowed to call the API      |
+| `VITE_API_BASE`          | No       | `http://localhost:8000/api`          | Frontend's base URL for backend requests             |
+
+Frontend env vars go in `frontend/.env.production` (used during `npm run build`). Backend env vars go in `backend/.env` (read at runtime via `python-dotenv`).
+
+### File storage
+
+Uploaded and transformed files are stored at the path given by `STORAGE_DIR` (e.g. `/tmp/regex-transformer-files/`). Files are identified by UUID and saved in Parquet format for fast type-preserving retrieval. On download, files are streamed back as CSV.
+
+In production, files are automatically deleted after 2 hours via a system-level cron job:
+
+```bash
+sudo crontab -e
+# add:
+0 */6 * * * find /tmp/regex-transformer-files -type f -mmin +120 -delete
+```
+
+This balances re-download convenience against storage growth and data minimization. For local development you can either set up the same cron job or clean files manually.
+
+## Deployment (production)
+
+Deployed to a DigitalOcean Droplet running Ubuntu 24.04. Architecture:
+
+- **nginx** terminates HTTPS, serves frontend static files from `dist/`, proxies `/api/*` to gunicorn
+- **gunicorn** runs Django as a WSGI server, bound to `127.0.0.1:8000` (internal only)
+- **systemd** manages the gunicorn process (`regex-transformer.service`), auto-restarting on failure
+- **Let's Encrypt + certbot** provides TLS certificates with automatic renewal
+- **UFW** firewall allows only ports 22, 80, 443
+- **cron** runs file cleanup every 6 hours
+
+### Deploying changes
+
+After pulling new code on the Droplet:
+
+```bash
+cd /root/projects/regex-transformer
+
+# Backend changes
+git pull
+cd backend
+source .venv/bin/activate
+pip install -r requirements.txt    # if requirements changed
+sudo systemctl restart regex-transformer
+
+# Frontend changes
+cd ../frontend
+npm install                         # if package.json changed
+npm run build                       # rebuild dist/
+
+# nginx automatically picks up new dist/ files; no reload needed
+```
+
+### Logs
+
+- Django application logs: `backend/logs/app.log` (info) and `backend/logs/error.log` (errors) — rotated at 5 MB, 3 backups retained
+- gunicorn / systemd logs: `sudo journalctl -u regex-transformer -n 100`
+- nginx access and error logs: `/var/log/nginx/access.log`, `/var/log/nginx/error.log`
+- File cleanup cron log: optionally added with `>> /var/log/regex-transformer-cleanup.log 2>&1` in the crontab
 
 ## API Endpoints
 
