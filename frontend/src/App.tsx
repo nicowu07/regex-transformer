@@ -1,5 +1,4 @@
 import axios, { AxiosError } from 'axios'
-import './App.css'
 import { useState, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
 
