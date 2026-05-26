@@ -3,7 +3,7 @@ from pathlib import Path
 import uuid
 import os
 
-STORAGE_DIR = Path(os.getenv("STORAGE_DIR"))
+STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "/tmp/regex-transformer-files"))
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 def valid_id(file_id: str) -> bool:
