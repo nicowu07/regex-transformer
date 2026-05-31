@@ -8,8 +8,6 @@ Built as a portfolio project to practice Django + React.
 
 **Live app:** <https://filetransformer.duckdns.org>
 
-📹 **Demo video:** https://www.loom.com/share/49eed0dc55454a67926f2adb425e66d7
-
 ## Stack
 
 - **Backend:** Django, Django REST Framework, pandas, pyarrow
@@ -130,6 +128,24 @@ npm run build                       # rebuild dist/
 | POST   | `/api/apply-filter/`          | Apply a query expression and return only matching rows   |
 | GET    | `/api/download/<file_id>/`    | Download the transformed file as CSV                     |
 
+## Testing
+
+The backend has a pytest test suite covering core services. To run:
+
+```bash
+cd backend
+source .venv/bin/activate
+pytest
+```
+
+### Coverage
+
+- **Service tests** (`test_services.py`) — pure functions: `regex_apply` happy path, empty replacement (delete-on-match), and unknown columns; `validate_regex` accepts well-formed patterns and rejects invalid syntax, oversized patterns, and ReDoS-prone patterns.
+
+### What's not covered yet
+
+- View-layer integration tests (status codes, error paths, file upload flow) — planned next
+- Frontend tests — none yet; the UI is thin enough that manual testing has been adequate so far
 
 ## Notes / Design Decisions
 
@@ -146,7 +162,6 @@ npm run build                       # rebuild dist/
 - **No third transformation.** Designed an auto-redact PII feature (LLM classifies which columns contain PII, applies appropriate redactions) but didn't ship it for time.
 - **No large file support.** Currently each file is processed synchronously. A production version would push large files to a Celery worker with progress polling on the frontend.
 - **Mixed-type Excel columns can fail to save.** Excel files with columns containing both numbers and strings (e.g. a salary column with one stray text value) fail pyarrow's strict type checking. Documented in code; fix is one-line (`astype(str)` on object columns) but not yet applied.
-- **No automated tests.** Pytest for services and integration tests for views would be the natural next step.
 - **No rate limiting or LLM call caching.** Identical descriptions hit the LLM every time.
 - **ReDoS protection is heuristic.** Catches obvious nested quantifiers in regex but isn't bulletproof. A production version would sandbox the regex with a wall-clock timeout, or use `re2`.
 - **Project hosted under `/root/` for speed.** A production setup would put the app under `/srv/` with proper user ownership instead of chmodding `/root/` to be traversable.
