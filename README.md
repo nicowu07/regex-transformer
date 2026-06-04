@@ -1,4 +1,4 @@
-# Regex Transformer
+# Regex Transformer ![CI](https://github.com/nicowu07/regex-transformer/actions/workflows/test.yml/badge.svg)
 
 A web app for matching and replacing patterns in CSV / Excel files using natural language. You describe the pattern (e.g. "find email addresses"), an LLM converts it to regex, and the app applies it to your file.
 
